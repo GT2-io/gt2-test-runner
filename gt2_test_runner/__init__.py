@@ -373,6 +373,8 @@ class ColorizedTextTestResult(unittest.result.TestResult):
 
         self.stream.flush()
         self.add_to_rerun_log(test)
+        #Call to member function that will append error to error file
+        self.add_to_collected_error()
 
     def addFailure(self, test, err):
         super(ColorizedTextTestResult, self).addFailure(test, err)
@@ -390,6 +392,8 @@ class ColorizedTextTestResult(unittest.result.TestResult):
 
         self.stream.flush()
         self.add_to_rerun_log(test)
+        #Call to member function that will append failure to error file
+        self.add_to_collected_error()
 
     def addSkip(self, test, reason):
         super(ColorizedTextTestResult, self).addSkip(test, reason)
@@ -546,7 +550,24 @@ class ColorizedTextTestResult(unittest.result.TestResult):
 
             print('\nHTML coverage data is saved as file://{}/index.html'.format(html_dir),
                   file=self.stream)
+    
+    # Member function that opens file and grabs the failure output of a test 
+    # form the "failures" member of the TestResult class. 
+    # Function iterates thorugh the last tuple in the member creating a string
+    # using join function to write to output file.
+    def add_to_collected_error(self):
+        # Open file in append mode
+        error_file = open("Error.txt", "a")
+        
+        # Get the length of "failures" to get last tuple
+        length = len(self.failures)
+        # Use join to create a string
+        error_string = "".join(str(error) for error in self.failures[length-1])
 
+        error_file.write(error_string)
+        error_file.write("\n")
+
+        error_file.close()
 
 class GT2Runner(unittest.TextTestRunner):
     """Test runner with colourised output and per-test coverage support
