@@ -557,15 +557,15 @@ class ColorizedTextTestResult(unittest.result.TestResult):
     # using join function to write to output file.
     def add_to_collected_error(self):
         # Open file in append mode
-        error_file = open("Error.txt", "a")
+        error_file = open('Error.txt', 'a')
         
         # Get the length of "failures" to get last tuple
         length = len(self.failures)
         # Use join to create a string
-        error_string = "".join(str(error) for error in self.failures[length-1])
+        error_string = ''.join(str(error) for error in self.failures[length-1])
 
         error_file.write(error_string)
-        error_file.write("\n")
+        error_file.write('\n')
 
         error_file.close()
 
