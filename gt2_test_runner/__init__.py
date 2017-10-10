@@ -16,6 +16,10 @@ import time
 import unittest
 import warnings
 
+import pdb # For debugging purposes
+import io # New module to use the StringIO buffer
+import sys # New module to use the capture standard out and standard error to buffer
+
 try:
     import coverage
     COVERAGE_AVAILABLE = True
@@ -306,7 +310,7 @@ class ColorizedTextTestResult(unittest.result.TestResult):
     def startTest(self, test):
         test_fqn = self._get_test_fqn(test)
         self.test_data[test_fqn]['start'] = time.time()
-
+   
         if self.coverage:
             self.coverage.start()
 
@@ -314,12 +318,14 @@ class ColorizedTextTestResult(unittest.result.TestResult):
             self.stream.write(test_fqn)
             self.stream.flush()
 
+        self.setup_buffer(test)
+
         return super(ColorizedTextTestResult, self).startTest(test)
 
     def stopTest(self, test):
         test_fqn = self._get_test_fqn(test)
         self.test_data[test_fqn]['stop'] = time.time()
-
+        
         if self.coverage:
             self.coverage.stop()
             self.test_data[test_fqn]['cov'] = self.coverage.data
@@ -338,6 +344,7 @@ class ColorizedTextTestResult(unittest.result.TestResult):
                 self.test_data[test_fqn]['start']))
 
         self.in_subtest = False
+        self.restore_buffer(test)
 
         return super(ColorizedTextTestResult, self).stopTest(test)
 
@@ -373,7 +380,7 @@ class ColorizedTextTestResult(unittest.result.TestResult):
 
         self.stream.flush()
         self.add_to_rerun_log(test)
-
+        
     def addFailure(self, test, err):
         super(ColorizedTextTestResult, self).addFailure(test, err)
 
@@ -390,7 +397,7 @@ class ColorizedTextTestResult(unittest.result.TestResult):
 
         self.stream.flush()
         self.add_to_rerun_log(test)
-
+        
     def addSkip(self, test, reason):
         super(ColorizedTextTestResult, self).addSkip(test, reason)
 
@@ -546,7 +553,27 @@ class ColorizedTextTestResult(unittest.result.TestResult):
 
             print('\nHTML coverage data is saved as file://{}/index.html'.format(html_dir),
                   file=self.stream)
+    
+    def setup_buffer(self, test):
+        sys.stdout = self.test_data[test_fqn]['standard out'] = io.StringIO()
+        sys.stderror = self.test_data[test_fqn]['standard error'] = io.StringIO()
 
+    def restore_buffer(self, test):
+        test_fqn = self._get_test_fqn(test)
+
+        output = self.test_data[test_fqn]['standard out'].getvalue()
+        error = self.test_data[test_fqn]['standard error'].getvalue()
+        
+        self.test_data[test_fqn]['standard out'].close()
+        self.test_data[test_fqn]['standard error'].close()
+        
+        sys.stdout = self._original_stdout
+        sys.stderror = self._original_stderr
+
+        error_file = open('Error.txt', 'a')
+        error_file.write(output)
+        error_file.write(error)
+        error_file.close()
 
 class GT2Runner(unittest.TextTestRunner):
     """Test runner with colourised output and per-test coverage support
